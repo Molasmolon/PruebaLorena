@@ -1,0 +1,598 @@
+import React, { useEffect, useState } from 'react';
+import { styled, useTheme } from '@mui/material/styles';
+import {
+  Box, CssBaseline, AppBar as MuiAppBar, Toolbar, Drawer, Divider, IconButton,
+  Typography, List, ListItemButton, ListItemIcon, ListItemText,
+  Button, Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, Paper, Dialog, DialogActions, DialogContent,
+  DialogContentText, DialogTitle
+} from '@mui/material';
+
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import axios from 'axios';
+import config from '../config';
+import { useNavigate } from 'react-router-dom';
+
+const drawerWidth = 240;
+
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
+  ({ theme, open }) => ({
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    marginLeft: `-${drawerWidth}px`,
+    ...(open && {
+      transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      marginLeft: 0,
+    }),
+  })
+);
+
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})(({ theme, open }) => ({
+  transition: theme.transitions.create(['margin', 'width'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+  justifyContent: 'flex-end',
+}));
+
+export default function Home() {
+  const theme = useTheme();
+  const [open, setOpen] = useState(false);
+  const [servicios, setServicios] = useState([]);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+
+  const navigate = useNavigate();
+
+  const handleDrawerOpen = () => setOpen(true);
+  const handleDrawerClose = () => setOpen(false);
+
+  // Obtener servicios desde la API
+  useEffect(() => {
+    axios.get(`${config.API_URL}/servicios`)
+      .then(response => setServicios(response.data))
+      .catch(error => console.error('Error al obtener servicios:', error));
+  }, []);
+
+  // Eliminar servicio
+  const handleDelete = (id) => {
+    axios.post(`${config.API_URL}/servicio/eliminar`, { id })
+      .then(() => {
+        alert('Servicio eliminado correctamente');
+        setServicios(servicios.filter(servicio => servicio.id !== id));
+      })
+      .catch(error => console.error('Error al eliminar servicio:', error));
+  };
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <AppBar position="fixed" open={open}>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerOpen}
+            edge="start"
+            sx={{ mr: 2, ...(open && { display: 'none' }) }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap>
+            Lista de Servicios
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+          },
+        }}
+        variant="persistent"
+        anchor="left"
+        open={open}
+      >
+        <DrawerHeader>
+          <IconButton onClick={handleDrawerClose}>
+            {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+          </IconButton>
+        </DrawerHeader>
+        <Divider />
+        <List>
+          <ListItemButton onClick={() => navigate('/home')}>
+            <ListItemIcon>
+              <MenuIcon />
+            </ListItemIcon>
+            <ListItemText primary="Lista de Servicios" />
+          </ListItemButton>
+
+          <ListItemButton onClick={() => navigate('/nuevo-servicio')}>
+            <ListItemIcon>
+              <MenuIcon />
+            </ListItemIcon>
+            <ListItemText primary="Nuevo Servicio" />
+          </ListItemButton>
+        </List>
+      </Drawer>
+
+      <Main open={open}>
+        <DrawerHeader />
+        <Typography variant="h4" gutterBottom>
+          Lista de Servicios
+        </Typography>
+
+        {/* Tabla de Servicios */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Cliente</TableCell>
+                <TableCell>Técnico</TableCell>
+                <TableCell>Fecha</TableCell>
+                <TableCell>Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {servicios.map((servicio) => (
+                <TableRow key={servicio.id}>
+                  <TableCell>{servicio.id}</TableCell>
+                  <TableCell>{servicio.id_cliente}</TableCell>
+                  <TableCell>{servicio.id_tecnico}</TableCell>
+                  <TableCell>{servicio.fecha}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<EditIcon />}
+                      onClick={() => navigate(`/nuevo-servicio?id=${servicio.id}`)}
+                      sx={{ mr: 1 }}
+                    >
+                      Editar
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => setDeleteDialog({ open: true, id: servicio.id })}
+                    >
+                      Eliminar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Dialogo de confirmación para eliminar */}
+        <Dialog
+          open={deleteDialog.open}
+          onClose={() => setDeleteDialog({ open: false, id: null })}
+        >
+          <DialogTitle>¿Eliminar servicio?</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar este servicio?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialog({ open: false, id: null })}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                handleDelete(deleteDialog.id);
+                setDeleteDialog({ open: false, id: null });
+              }}
+              color="error"
+            >
+              Eliminar
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Main>
+    </Box>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+import React from 'react';
+import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
+
+function Login() {
+  return (
+    <Container fluid className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh', backgroundColor: '#eef2f5' }}>
+      <Row className="w-100">
+        <Col md={6} lg={4} className="mx-auto">
+          <Card className="shadow-lg p-4 rounded-4" style={{ border: 'none' }}>
+            <Card.Body>
+              <h2 className="text-center text-primary mb-4" style={{ fontWeight: 'bold' }}>Iniciar Sesión</h2>
+              <Form>
+                <Form.Group className="mb-3" controlId="formEmail">
+                  <Form.Label>Correo Electrónico</Form.Label>
+                  <Form.Control
+                    type="email"
+                    placeholder="Ingresa tu email"
+                    required
+                    className="p-3"
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="formPassword">
+                  <Form.Label>Contraseña</Form.Label>
+                  <Form.Control
+                    type="password"
+                    placeholder="Ingresa la contraseña"
+                    required
+                    className="p-3"
+                  />
+                </Form.Group>
+
+                <Button variant="primary" type="submit" className="w-100 p-2 mt-3">
+                  Iniciar Sesión
+                </Button>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
+}
+
+export default Login;
+
+
+
+
+
+
+
+
+
+
+
+import React, { useEffect, useState } from 'react';
+import { styled, useTheme } from '@mui/material/styles';
+import {
+  Box, CssBaseline, AppBar as MuiAppBar, Toolbar, Drawer, Divider, IconButton,
+  Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
+  FormControl, InputLabel, Select, MenuItem, TextField, Button
+} from '@mui/material';
+
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+import axios from 'axios';
+import config from '../config';
+import { useNavigate } from 'react-router-dom';
+
+const drawerWidth = 240;
+
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
+  ({ theme, open }) => ({
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    marginLeft: `-${drawerWidth}px`,
+    ...(open && {
+      transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      marginLeft: 0,
+    }),
+  })
+);
+
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})(({ theme, open }) => ({
+  transition: theme.transitions.create(['margin', 'width'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+  justifyContent: 'flex-end',
+}));
+
+export default function NuevoServicio() {
+  const theme = useTheme();
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const id = searchParams.get('id');
+
+  const handleDrawerOpen = () => setOpen(true);
+  const handleDrawerClose = () => setOpen(false);
+
+  const [formData, setFormData] = useState({
+    id_cliente: '',
+    id_tecnico: '',
+    fecha: '',
+    hora: '',
+    observaciones: '',
+    id_poliza: '',
+  });
+
+  const [clientes, setClientes] = useState([]);
+  const [polizas, setPolizas] = useState([]);
+
+  const tecnicos = [
+    { id: 1, name: 'Técnico 1' },
+    { id: 2, name: 'Técnico 2' },
+  ];
+
+  // Obtener clientes
+  useEffect(() => {
+    axios.get(`${config.API_URL}/clientes/lista`)
+      .then(response => setClientes(response.data))
+      .catch(error => console.error('Error al obtener clientes:', error));
+  }, []);
+
+  useEffect(() => {
+    if (id) {
+        axios.post(`${config.API_URL}/servicio`, { id })
+            .then(response => {
+                console.log(response.data);  // Verifica el resultado en la consola
+                const servicio = response.data;
+
+                if (servicio.fecha) {
+                    servicio.fecha = `${servicio.fecha}T00:00`;
+                }
+
+                if (!servicio.id_poliza) {
+                    servicio.id_poliza = '';
+                }
+
+                setFormData(servicio);
+
+                if (servicio.id_cliente) {
+                    axios.post(`${config.API_URL}/polizas/lista`, { id_cliente: servicio.id_cliente })
+                        .then(response => {
+                            setPolizas(response.data);
+
+                            if (!servicio.id_poliza && response.data.length > 0) {
+                                setFormData(prevFormData => ({
+                                    ...prevFormData,
+                                    id_poliza: response.data[0].id
+                                }));
+                            }
+                        })
+                        .catch(error => console.error('Error al obtener pólizas:', error));
+                }
+            })
+            .catch(error => console.error('Error al obtener el servicio:', error));
+    }
+}, [id]);
+
+
+  // Obtener pólizas del cliente seleccionado
+  const handleClienteChange = (event) => {
+    const id_cliente = event.target.value;
+    setFormData({ ...formData, id_cliente });
+
+    axios.post(`${config.API_URL}/polizas/lista`, { id_cliente })
+      .then(response => setPolizas(response.data))
+      .catch(error => console.error('Error al obtener pólizas:', error));
+  };
+
+  const handleChange = (event) => {
+    setFormData({ ...formData, [event.target.name]: event.target.value });
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    axios.post(`${config.API_URL}/servicio/nuevo`, formData)
+      .then(() => {
+        alert('Servicio guardado correctamente')
+        navigate('/home')
+      })
+      .catch(error => console.error('Error al guardar servicio:', error));
+  };
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <AppBar position="fixed" open={open}>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerOpen}
+            edge="start"
+            sx={{ mr: 2, ...(open && { display: 'none' }) }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap>
+            Registro de Servicio
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+          },
+        }}
+        variant="persistent"
+        anchor="left"
+        open={open}
+      >
+        <DrawerHeader>
+          <IconButton onClick={handleDrawerClose}>
+            {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+          </IconButton>
+        </DrawerHeader>
+        <Divider />
+        <List>
+          <ListItemButton onClick={() => navigate('/home')}>
+            <ListItemIcon>
+              <InboxIcon />
+            </ListItemIcon>
+            <ListItemText primary="Lista de Servicios" />
+          </ListItemButton>
+
+          <ListItemButton onClick={() => navigate('/nuevo-servicio')}>
+            <ListItemIcon>
+              <InboxIcon />
+            </ListItemIcon>
+            <ListItemText primary="Nuevo Servicio" />
+          </ListItemButton>
+        </List>
+      </Drawer>
+
+      <Main open={open}>
+        <DrawerHeader />
+        <form onSubmit={handleSubmit}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Cliente</InputLabel>
+            <Select
+              name="id_cliente"
+              value={formData.id_cliente}
+              onChange={handleClienteChange}
+              required
+            >
+              {clientes.map((cliente) => (
+                <MenuItem key={cliente.id} value={cliente.id}>{cliente.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Póliza</InputLabel>
+            <Select
+              name="id_poliza"
+              value={formData.id_poliza}
+              onChange={handleChange}
+              required
+            >
+              {polizas.map((poliza) => (
+                <MenuItem key={poliza.id} value={poliza.id}>ID:{poliza.id}  - Horas:{poliza.total_horas} - Observ: {poliza.observaciones}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Técnico</InputLabel>
+            <Select
+              name="id_tecnico"
+              value={formData.id_tecnico}
+              onChange={handleChange}
+              required
+            >
+              {tecnicos.map((tecnico) => (
+                <MenuItem key={tecnico.id} value={tecnico.id}>{tecnico.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            label="Fecha"
+            type="datetime-local"
+            name="fecha"
+            value={formData.fecha}
+            onChange={handleChange}
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            required
+          />
+
+          <TextField
+            fullWidth
+            label="Horas"
+            name="horas"
+            type="number"
+            value={formData.horas}
+            onChange={handleChange}
+            margin="normal"
+            required
+          />
+
+          <TextField
+            fullWidth
+            label="Observaciones"
+            name="observaciones"
+            value={formData.observaciones}
+            onChange={handleChange}
+            margin="normal"
+            multiline
+            rows={3}
+          />
+
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+            Guardar Servicio
+          </Button>
+
+        </form>
+      </Main>
+    </Box>
+  );
+}
